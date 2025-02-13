@@ -4,7 +4,7 @@ import os
 def text_to_speech(text, lang='de'):
     """Converte o texto em áudio e salva como um arquivo de som."""
     tts = gTTS(text=text, lang=lang, slow=False)
-    output_file = "temp/output_audio.mp3"
+    output_file = "temp/output_audio.wav"
     
     if not os.path.exists("temp"):
         os.makedirs("temp")
