@@ -1,7 +1,8 @@
 import whisper
 from openai import OpenAI
+import config
 
-client = OpenAI(api_key='')
+client = OpenAI(api_key=config.api_key)
 
 def transcribe_audio(audio_filename):
     model = whisper.load_model("base")
