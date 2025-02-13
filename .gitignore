@@ -1,3 +1,4 @@
 /temp
 *.pyc
 config.py
+src/__pycache__/
