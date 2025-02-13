@@ -3,6 +3,7 @@ from tkinter import Label
 from src.recorder import start_recording, stop_recording
 from src.transcriber import process_audio_with_llm
 from src.animation import load_gif
+from src.text_to_speech import text_to_speech, play_audio
 
 def start_ui():
     global gif_label, gif_frames, animating, root, status_label
@@ -85,9 +86,14 @@ def stop_button_action(start_button, stop_button, status_label):
     if filename:
         animating = True
         animate_gif()
+        status_label.config(text="Processando áudio...")
         llm_response = process_audio_with_llm(filename)
         animating = False
         status_label.config(text=f"Resposta: {llm_response}")
+
+        audio_file = text_to_speech(llm_response, lang='de')
+        play_audio(audio_file)
+
     start_button.config(state=tk.NORMAL)
 
 if __name__ == "__main__":
