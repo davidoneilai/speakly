@@ -4,3 +4,4 @@ wave
 openai-whisper
 openai
 pillow
+gTTs
