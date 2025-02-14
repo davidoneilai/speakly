@@ -1,8 +1,13 @@
 import whisper
 from openai import OpenAI
-import config
+from pyhocon import ConfigFactory
+import os
 
-client = OpenAI(api_key=config.api_key)
+config = ConfigFactory.parse_file("speakly.conf")
+api_key = config.get('openai.key')
+llm_model = config.get('openai.llm')
+
+client = OpenAI(api_key=api_key)
 
 def transcribe_audio(audio_filename):
     model = whisper.load_model("base")
@@ -11,7 +16,7 @@ def transcribe_audio(audio_filename):
 
 def send_to_llm(text):
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=llm_model,
         messages=[{"role": "user", "content": f"Transcrição: {text}\nTraduza esse texto para alemão:"}]
     )
     return response.choices[0].message.content
