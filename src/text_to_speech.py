@@ -1,18 +1,32 @@
 from gtts import gTTS
+import pygame
 import os
+from pydub import AudioSegment
 
 def text_to_speech(text, lang='de'):
     """Converte o texto em áudio e salva como um arquivo de som."""
     tts = gTTS(text=text, lang=lang, slow=False)
-    output_file = "temp/output_audio.wav"
+    mp3_file = "temp/output_audio.mp3"
     
     if not os.path.exists("temp"):
         os.makedirs("temp")
     
-    tts.save(output_file)
-    print(f"Áudio salvo em: {output_file}")
-    return output_file
+    tts.save(mp3_file)
+
+    # Converte MP3 para WAV (formato compatível com pygame)
+    wav_file = "temp/output_audio.wav"
+    audio = AudioSegment.from_mp3(mp3_file)
+    audio.export(wav_file, format="wav")
+
+    print(f"Áudio salvo em: {wav_file}")
+    return wav_file
 
 def play_audio(file_path):
-    """Reproduz o áudio gerado."""
-    os.system(f"start {file_path}")  # No Linux ou MacOS, troque 'start' por 'afplay' ou 'open'
+    """Reproduz o áudio gerado usando pygame."""
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+
+    # Espera até a reprodução terminar
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)
