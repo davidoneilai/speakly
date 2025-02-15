@@ -1,100 +1,73 @@
-import tkinter as tk
-from tkinter import Label
+import sys
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout
+from PyQt6.QtGui import QFont, QMovie
+from PyQt6.QtCore import Qt
 from src.recorder import start_recording, stop_recording
 from src.transcriber import process_audio_with_llm
-from src.animation import load_gif
 from src.text_to_speech import text_to_speech, play_audio
 
-def start_ui():
-    global gif_label, gif_frames, animating, root, status_label
+class AudioRecorderApp(QWidget):
+    def __init__(self):
+        super().__init__()
 
-    root = tk.Tk()
-    root.title("Gravador de Áudio para LLM")
-    root.geometry("800x600")
-    root.configure(bg="#2C3E50") 
+        self.setWindowTitle("Gravador de Áudio para LLM")
+        self.setGeometry(100, 100, 800, 600)
+        self.setStyleSheet("background-color: #2C3E50; color: white;")
 
-    content_frame = tk.Frame(root, bg="#2C3E50")
-    content_frame.pack(expand=True, fill="both", pady=20)
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    gif_path = "img/ai_speaking.gif"
-    gif_frames = load_gif(gif_path)
-    gif_label = Label(content_frame, bg="#2C3E50")
-    gif_label.pack(expand=True)
+        self.gif_label = QLabel(self)
+        self.movie = QMovie("img/ai_speaking.gif")
+        self.gif_label.setMovie(self.movie)
+        layout.addWidget(self.gif_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    control_frame = tk.Frame(root, bg="#34495E", padx=20, pady=20)
-    control_frame.pack(side="bottom", fill="x")
+        button_layout = QHBoxLayout()
+        self.start_button = QPushButton("Iniciar Gravação")
+        self.start_button.setStyleSheet("background-color: #27AE60; color: white; font-size: 16px; padding: 10px;")
+        self.start_button.clicked.connect(self.start_recording_action)
 
-    button_font = ("Helvetica", 12, "bold")
+        self.stop_button = QPushButton("Parar Gravação")
+        self.stop_button.setStyleSheet("background-color: #C0392B; color: white; font-size: 16px; padding: 10px;")
+        self.stop_button.setEnabled(False)
+        self.stop_button.clicked.connect(self.stop_recording_action)
 
-    start_button = tk.Button(
-        control_frame,
-        text="Iniciar Gravação",
-        command=lambda: start_button_action(start_button, stop_button, status_label),
-        width=20,
-        font=button_font,
-        bg="#27AE60",     
-        fg="white",
-        activebackground="#2ECC71",
-        bd=0
-    )
-    start_button.grid(row=0, column=0, padx=10, pady=5)
+        button_layout.addWidget(self.start_button)
+        button_layout.addWidget(self.stop_button)
+        layout.addLayout(button_layout)
 
-    stop_button = tk.Button(
-        control_frame,
-        text="Parar Gravação",
-        command=lambda: stop_button_action(start_button, stop_button, status_label),
-        state=tk.DISABLED,
-        width=20,
-        font=button_font,
-        bg="#C0392B",    
-        fg="white",
-        activebackground="#E74C3C",
-        bd=0
-    )
-    stop_button.grid(row=0, column=1, padx=10, pady=5)
+        # Status label
+        self.status_label = QLabel("Clique em 'Iniciar Gravação' para começar.")
+        self.status_label.setFont(QFont("Helvetica", 14))
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.status_label)
 
-    status_label = tk.Label(
-        control_frame,
-        text="Clique em 'Iniciar Gravação' para começar.",
-        font=("Helvetica", 12),
-        bg="#34495E",
-        fg="white",
-        wraplength=760,  
-        justify="left"  
-    )
-    status_label.grid(row=1, column=0, columnspan=2, pady=10, sticky="w")
+        self.setLayout(layout)
 
-    root.mainloop()
+    def start_recording_action(self):
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        self.status_label.setText("Gravando...")
+        start_recording()
 
-def animate_gif(frame=0):
-    global animating, gif_label, gif_frames, root
-    if animating and gif_frames:
-        gif_label.configure(image=gif_frames[frame])
-        root.after(100, lambda: animate_gif((frame + 1) % len(gif_frames)))
+    def stop_recording_action(self):
+        self.stop_button.setEnabled(False)
+        filename = stop_recording()
 
-def start_button_action(start_button, stop_button, status_label):
-    start_button.config(state=tk.DISABLED)
-    stop_button.config(state=tk.NORMAL)
-    status_label.config(text="Gravando...")
-    start_recording()
+        if filename:
+            self.movie.start()  
+            self.status_label.setText("Processando áudio...")
+            llm_response = process_audio_with_llm(filename)
+            self.movie.stop()
+            self.status_label.setText(f"Resposta: {llm_response}")
 
-def stop_button_action(start_button, stop_button, status_label):
-    global animating
-    stop_button.config(state=tk.DISABLED)
-    filename = stop_recording()
+            audio_file = text_to_speech(llm_response, lang='de')
+            play_audio(audio_file)
 
-    if filename:
-        animating = True
-        animate_gif()
-        status_label.config(text="Processando áudio...")
-        llm_response = process_audio_with_llm(filename)
-        animating = False
-        status_label.config(text=f"Resposta: {llm_response}")
-
-        audio_file = text_to_speech(llm_response, lang='de')
-        play_audio(audio_file)
-
-    start_button.config(state=tk.NORMAL)
+        self.start_button.setEnabled(True)
 
 if __name__ == "__main__":
-    start_ui()
+    app = QApplication(sys.argv)
+    window = AudioRecorderApp()
+    window.show()
+    sys.exit(app.exec())
