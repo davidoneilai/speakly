@@ -18,11 +18,14 @@ def send_to_llm(text):
     response = client.chat.completions.create(
         model=llm_model,
         messages=[{"role": "user", "content": f"""
-                   Pegue esse texto: {text}\n
-                   E responda como se fosse uma conversa, mas responda em alemão.
+                   Finja que somos amigos conversando.  
+                   Eu falo em português, e você responde em alemão.  
+                   Suas respostas devem ser curtas e naturais, como em uma conversa casual.  
+                   Aqui está o que eu disse: {text}
                    """}]
     )
     return response.choices[0].message.content
+
 
 def process_audio_with_llm(audio_filename):
     transcript = transcribe_audio(audio_filename)
