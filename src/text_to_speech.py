@@ -13,7 +13,6 @@ def text_to_speech(text, lang='de'):
     
     tts.save(mp3_file)
 
-    # Converte MP3 para WAV (formato compatível com pygame)
     wav_file = "temp/output_audio.wav"
     audio = AudioSegment.from_mp3(mp3_file)
     audio.export(wav_file, format="wav")
@@ -27,6 +26,5 @@ def play_audio(file_path):
     pygame.mixer.music.load(file_path)
     pygame.mixer.music.play()
 
-    # Espera até a reprodução terminar
     while pygame.mixer.music.get_busy():
         pygame.time.Clock().tick(10)
