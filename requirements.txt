@@ -5,3 +5,5 @@ openai-whisper
 openai
 pillow
 gTTs
+pygame
+pydub
