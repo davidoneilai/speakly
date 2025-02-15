@@ -17,7 +17,10 @@ def transcribe_audio(audio_filename):
 def send_to_llm(text):
     response = client.chat.completions.create(
         model=llm_model,
-        messages=[{"role": "user", "content": f"Transcrição: {text}\nTraduza esse texto para alemão:"}]
+        messages=[{"role": "user", "content": f"""
+                   Pegue esse texto: {text}\n
+                   E responda como se fosse uma conversa, mas responda em alemão.
+                   """}]
     )
     return response.choices[0].message.content
 
