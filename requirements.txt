@@ -9,3 +9,8 @@ pygame
 pydub
 PyQt6
 pyhocon
+langchain
+langchain-openai
+langchain-community
+langgraph
+pypdf

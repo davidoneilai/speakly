@@ -5,7 +5,6 @@ from PyQt6.QtCore import Qt
 from src.recorder import start_recording, stop_recording
 from src.transcriber import process_audio_with_llm
 from src.text_to_speech import text_to_speech, play_audio
-from scr.history import HistoryManager
 
 class AudioRecorderApp(QWidget):
     def __init__(self):
@@ -42,18 +41,7 @@ class AudioRecorderApp(QWidget):
         self.status_label.setFont(QFont("Helvetica", 14))
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_label)
-        '''
-        # Histórico de mensagens
-        self.history_text = QTextEdit()
-        self.history_text.setReadOnly(True)
-        self.history_text.setStyleSheet("background-color: #34495E; color: white; font-size: 14px; padding: 5px;")
-        layout.addWidget(self.history_text)
-        '''
         self.setLayout(layout)
-        '''
-        # Initialize HistoryManager
-        self.history_manager = HistoryManager(self.history_text)
-        '''
 
     def start_recording_action(self):
         self.start_button.setEnabled(False)
@@ -68,13 +56,9 @@ class AudioRecorderApp(QWidget):
         if filename:
             self.movie.start()  
             self.status_label.setText("Processando áudio...")
-            llm_response = process_audio_with_llm(filename)
+            llm_response = process_audio_with_llm(filename, self.history, self.vector_db)
             self.movie.stop()
             self.status_label.setText(f"Resposta: {llm_response}")
-            '''
-            # Adiciona ao histórico
-            self.history_manager.add_entry("[Áudio enviado]", llm_response)
-            '''
             # Converter resposta em áudio
             audio_file = text_to_speech(llm_response, lang='de')
             play_audio(audio_file)

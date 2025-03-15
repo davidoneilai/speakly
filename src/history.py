@@ -4,9 +4,9 @@ class HistoryManager:
         self.history = []
 
     def add_entry(self, user_text, assistant_text):
-        self.history.append(f"<b>Usuário:</b> {user_text}")
-        self.history.append(f"<b>Assistente:</b> {assistant_text}")
+        self.history.append(f"Usuário: {user_text}")
+        self.history.append(f"Assistente: {assistant_text}")
         self.update_history_display()
 
     def update_history_display(self):
-        self.text_edit.setHtml("<br>".join(self.history))
+        self.text_edit("<br>".join(self.history))
