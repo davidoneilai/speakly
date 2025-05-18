@@ -56,7 +56,7 @@ class AudioRecorderApp(QWidget):
         if filename:
             self.movie.start()  
             self.status_label.setText("Processando áudio...")
-            llm_response = process_audio_with_llm(filename, self.history, self.vector_db)
+            llm_response = process_audio_with_llm(filename)
             self.movie.stop()
             self.status_label.setText(f"Resposta: {llm_response}")
             # Converter resposta em áudio

@@ -9,10 +9,12 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from src.retriever import Retriever
-from src.vector_db import VectorDb 
+from src.vector_db import VectorDb
 
-if not os.environ.get("OPENAI_API_KEY"):
-    os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# if not os.environ.get("OPENAI_API_KEY"):
+#     os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
 # Configurações iniciais
 config = ConfigFactory.parse_file("speakly.conf")
@@ -22,9 +24,9 @@ llm = init_chat_model(llm_model, model_provider="openai")
 
 # Instancie sua base vetorial (vector_db) conforme sua implementação.
 # Exemplo: de uma classe VectorDB ou similar.
-
+db = VectorDb()
 # Cria a instância do vector_db com os parâmetros necessários
-vector_db = VectorDb.add_pdf("data/book.pdf")
+vector_db = db.add_pdf("book.pdf")
 
 # Instancia o Retriever e extrai o método retrieve para ser usado como ferramenta
 retriever_instance = Retriever(vector_db)
@@ -94,24 +96,22 @@ memory = MemorySaver()
 graph = graph_builder.compile(checkpointer=memory)
 
 # Nova função send_to_llm utilizando o grafo
-def send_to_llm(text, history):
+def send_to_llm(text):
     """
-    Prepara o estado inicial com o áudio transcrito (text) e o histórico (history),
+    Prepara o estado inicial com o áudio transcrito (text),
     executa o grafo e retorna a resposta gerada.
     """
     initial_messages = []
-    if history:
-        # Adiciona o histórico como mensagem do sistema (ajuste conforme necessário)
-        initial_messages.append(SystemMessage(f"Histórico da conversa: {history}"))
     # Adiciona a query como mensagem humana
     initial_messages.append(HumanMessage(text))
     
     state = MessagesState({"messages": initial_messages})
-    final_state = graph.invoke(state)
+    # Adicione um thread_id único (pode ser um valor fixo ou dinâmico)
+    final_state = graph.invoke(state, config={"thread_id": "default"})
     response_message = final_state["messages"][-1]
     return response_message.content
 
 # A função process_audio_with_llm continua utilizando a transcrição como query para o grafo
-def process_audio_with_llm(audio_filename, history):
+def process_audio_with_llm(audio_filename):
     transcript = transcribe_audio(audio_filename)
-    return send_to_llm(transcript, history)
+    return send_to_llm(transcript)
