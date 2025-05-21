@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Gravador de Áudio para LLM</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="recorder">
+    <!-- Onda de voz central -->
+    <div id="wave-container">
+      <img src="img/audiowave.gif" alt="Voz ativa" id="wave">
+    </div>
+
+    <!-- Botões de controle -->
+    <div id="buttons">
+      <button id="start-btn">Iniciar Gravação</button>
+      <button id="stop-btn" disabled>Parar Gravação</button>
+    </div>
+
+    <!-- Status -->
+    <p id="status-text">Clique em 'Iniciar Gravação' para começar.</p>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
