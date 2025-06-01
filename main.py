@@ -36,7 +36,7 @@ def api_stop_recording():
 
     try:
         llm_resp = process_audio_with_llm(str(temp_path))
-        tts_filename = text_to_speech(llm_resp, lang='de')
+        tts_filename = text_to_speech(llm_resp, lang='zh-CN')
         # agora retornamos a URL para o front
         audio_url = url_for('serve_tts', filename=tts_filename, _external=False)
         print(f"Audio URL: {audio_url}")

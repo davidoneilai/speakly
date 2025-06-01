@@ -9,9 +9,9 @@ BASE_DIR = Path(__file__).parent.parent.resolve()
 TTS_DIR = BASE_DIR / 'public' / 'tts'
 TTS_DIR.mkdir(parents=True, exist_ok=True)
 
-def text_to_speech(text, lang='de'):
+def text_to_speech(text, lang='zh-CN'):
     """Converte o texto em áudio e salva em public/tts"""
-    tts = gTTS(text=text, lang=lang, slow=False)
+    tts = gTTS(text=text, lang=lang, slow=True)
     timestamp = int(time.time() * 1000)
     filename = f"tts_{timestamp}.mp3"
     out_path = TTS_DIR / filename
