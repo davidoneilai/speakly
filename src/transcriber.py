@@ -66,6 +66,7 @@ def generate(state: MessagesState):
         "Use the following pieces of retrieved context to answer "
         "the question. If you don't know the answer, say that you don't know. "
         "Use three sentences maximum and keep the answer concise."
+        "Use simple vocabulary and short sentences."
         "\n\n" +
         docs_content
     )
