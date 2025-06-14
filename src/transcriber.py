@@ -33,8 +33,10 @@ retriever_instance = Retriever(vector_db)
 retrieve = retriever_instance.retrieve
 
 def transcribe_audio(audio_filename):
+    print(f"Transcrevendo arquivo: {audio_filename}")  # Log 1
     model = whisper.load_model("base")
     result = model.transcribe(audio_filename)
+    print(f"Resultado da transcrição: {result['text']}")  # Log 2
     return result["text"]
 
 # Passo 1: Gerar uma mensagem (possivelmente com chamada de ferramenta)
@@ -115,4 +117,8 @@ def send_to_llm(text):
 # A função process_audio_with_llm continua utilizando a transcrição como query para o grafo
 def process_audio_with_llm(audio_filename):
     transcript = transcribe_audio(audio_filename)
-    return send_to_llm(transcript)
+    llm_response = send_to_llm(transcript)
+    return {
+        "transcription": transcript,
+        "llm_response": llm_response
+    }

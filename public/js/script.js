@@ -46,9 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await resp.json();
         console.log("JSON recebido:", data);
+
+        // Mostra a transcrição
+        status.textContent = `Você disse: "${data.transcription}"`;
         
         if (data.llm_response) {
-          status.textContent = `Resposta: ${data.llm_response}`;
+          status.textContent = `Usuário: ${data.transcription}\n`;
+          status.textContent += `Resposta: ${data.llm_response}`;
+
         }
 
         if (data.audio_url) {

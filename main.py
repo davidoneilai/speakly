@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, url_for
 from src.recorder import start_recording, stop_recording
-from src.transcriber import process_audio_with_llm
+from src.transcriber import process_audio_with_llm, transcribe_audio
 from src.text_to_speech import text_to_speech
 
 # 1) BASE_DIR agora é a pasta onde está o main.py (a raiz do projeto)
@@ -35,12 +35,22 @@ def api_stop_recording():
     f.save(temp_path)
 
     try:
-        llm_resp = process_audio_with_llm(str(temp_path))
-        tts_filename = text_to_speech(llm_resp, lang='zh-CN')
-        # agora retornamos a URL para o front
+        # Chama apenas process_audio_with_llm que já faz a transcrição
+        result = process_audio_with_llm(str(temp_path))
+
+        # Extrai os resultados
+        transcription = result['transcription']
+        llm_response = result['llm_response']
+
+        # Gera o áudio da resposta
+        tts_filename = text_to_speech(llm_response, lang='zh-CN')
         audio_url = url_for('serve_tts', filename=tts_filename, _external=False)
-        print(f"Audio URL: {audio_url}")
-        return jsonify({'audio_url': audio_url, "llm_response": tts_filename}), 200
+
+        return jsonify({
+            'transcription': transcription,
+            'llm_response': llm_response,
+            'audio_url': audio_url
+        }), 200
 
     except Exception as e:
         import traceback; traceback.print_exc()
