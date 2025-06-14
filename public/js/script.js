@@ -6,6 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const startBtn = document.getElementById('start-btn');
   const stopBtn  = document.getElementById('stop-btn');
   const status   = document.getElementById('status-text');
+  const waveImg = document.getElementById('wave');
+  const WAVE_STATIC = 'img/audiowave.png';
+  const WAVE_ANIMATED = 'img/audiowave.gif';
+
+  waveImg.src = WAVE_STATIC;  // Inicialmente, onda parada
 
   startBtn.addEventListener('click', async () => {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -18,9 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
       startBtn.disabled = true;
       stopBtn.disabled = false;
       status.textContent = 'Gravando...';
+      waveImg.src = WAVE_ANIMATED; // Onda animada ao gravar
     };
 
     mediaRecorder.onstop = async () => {
+      waveImg.src = WAVE_STATIC; // Onda parada ao processar
       status.textContent = 'Processando áudio...';
       console.log('Entrou no onstop');
 
@@ -39,14 +46,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = await resp.json();
         console.log("JSON recebido:", data);
-
+        
         if (data.llm_response) {
           status.textContent = `Resposta: ${data.llm_response}`;
         }
 
         if (data.audio_url) {
           const audio = new Audio(data.audio_url);
-          audio.addEventListener('canplaythrough', () => audio.play());
+          audio.addEventListener('play', () => {
+            waveImg.src = WAVE_ANIMATED; // Onda animada ao reproduzir
+          });
+          audio.addEventListener('ended', () => {
+            waveImg.src = WAVE_STATIC; // Onda parada ao terminar reprodução
+          });
+          audio.addEventListener('pause', () => {
+            waveImg.src = WAVE_STATIC;
+          });
+          audio.play();
         }
 
       } catch (err) {
