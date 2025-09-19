@@ -20,6 +20,23 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 config = ConfigFactory.parse_file("speakly.conf")
 llm_model = config.get('openai.llm')
 
+# Configurações do Whisper
+WHISPER_MODEL = config.get('whisper.model', 'base')  # Voltando para base por performance
+WHISPER_LANGUAGE = config.get('whisper.language', 'auto')
+WHISPER_FP16 = config.get('whisper.fp16', False)
+WHISPER_VERBOSE = config.get('whisper.verbose', False)
+
+# Cache do modelo Whisper para evitar recarregar
+_whisper_model_cache = None
+
+def get_whisper_model():
+    """Carrega o modelo Whisper uma única vez e mantém em cache"""
+    global _whisper_model_cache
+    if _whisper_model_cache is None:
+        print(f"Carregando modelo Whisper: {WHISPER_MODEL} (primeira vez)")
+        _whisper_model_cache = whisper.load_model(WHISPER_MODEL)
+    return _whisper_model_cache
+
 llm = init_chat_model(llm_model, model_provider="openai")
 
 # Instancie sua base vetorial (vector_db) conforme sua implementação.
@@ -33,11 +50,33 @@ retriever_instance = Retriever(vector_db)
 retrieve = retriever_instance.retrieve
 
 def transcribe_audio(audio_filename):
-    print(f"Transcrevendo arquivo: {audio_filename}")  # Log 1
-    model = whisper.load_model("base")
-    result = model.transcribe(audio_filename)
-    print(f"Resultado da transcrição: {result['text']}")  # Log 2
-    return result["text"]
+    """
+    Transcreve áudio usando Whisper com cache e configurações otimizadas para velocidade
+    """
+    print(f"Transcrevendo arquivo: {audio_filename}")
+    
+    # Usa modelo em cache (muito mais rápido)
+    model = get_whisper_model()
+    
+    # Configurações otimizadas para VELOCIDADE
+    transcribe_options = {
+        "fp16": WHISPER_FP16,
+        "verbose": WHISPER_VERBOSE,
+        "temperature": 0.0,
+        # Removido beam_size e best_of para velocidade
+    }
+    
+    # Adicionar idioma se especificado
+    if WHISPER_LANGUAGE != "auto":
+        transcribe_options["language"] = WHISPER_LANGUAGE
+    
+    print(f"Iniciando transcrição com modelo {WHISPER_MODEL}...")
+    result = model.transcribe(audio_filename, **transcribe_options)
+    
+    transcript = result["text"].strip()
+    print(f"Transcrição concluída: {transcript}")
+    
+    return transcript
 
 # Passo 1: Gerar uma mensagem (possivelmente com chamada de ferramenta)
 def query_or_respond(state: MessagesState):
