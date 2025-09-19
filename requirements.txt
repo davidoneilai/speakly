@@ -1,10 +1,9 @@
 sounddevice
 numpy
-wave
 openai-whisper
 openai
 pillow
-gTTs
+gtts
 pygame
 pydub
 PyQt6
@@ -14,3 +13,5 @@ langchain-openai
 langchain-community
 langgraph
 pypdf
+Flask
+faiss-cpu
