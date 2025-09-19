@@ -3,24 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Gravador de Áudio para LLM</title>
+  <title>Speakly - Assistente de Voz Inteligente</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div id="recorder">
-    <!-- Onda de voz central -->
-    <div id="wave-container">
-      <img src="img/audiowave.gif" alt="Voz ativa" id="wave">
-    </div>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">
+        <i class="fas fa-microphone-alt"></i>
+        Speakly
+      </h1>
+      <p class="subtitle">Seu assistente de voz inteligente powered by AI</p>
+    </header>
 
-    <!-- Botões de controle -->
-    <div id="buttons">
-      <button id="start-btn">Iniciar Gravação</button>
-      <button id="stop-btn" disabled>Parar Gravação</button>
-    </div>
+    <main class="main-content">
+      <!-- Visualizador de áudio central -->
+      <div class="audio-visualizer">
+        <div class="wave-container">
+          <img src="img/audiowave.gif" alt="Visualizador de áudio" id="wave" class="wave-image">
+          <div class="pulse-ring"></div>
+        </div>
+      </div>
 
-    <!-- Status -->
-    <p id="status-text">Clique em 'Iniciar Gravação' para começar.</p>
+      <!-- Controles de gravação -->
+      <div class="controls">
+        <button id="start-btn" class="btn btn-primary">
+          <i class="fas fa-microphone"></i>
+          <span>Iniciar Gravação</span>
+        </button>
+        <button id="stop-btn" class="btn btn-danger" disabled>
+          <i class="fas fa-stop"></i>
+          <span>Parar Gravação</span>
+        </button>
+      </div>
+
+      <!-- Status e conversação -->
+      <div class="conversation">
+        <div class="status-card">
+          <p id="status-text" class="status-text">
+            <i class="fas fa-info-circle"></i>
+            Clique em 'Iniciar Gravação' para começar a conversar
+          </p>
+        </div>
+        
+        <div class="chat-container" id="chat-container">
+          <!-- Mensagens da conversa aparecerão aqui -->
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2025 Speakly - Tecnologia de voz avançada</p>
+    </footer>
   </div>
 
   <script src="js/script.js"></script>
