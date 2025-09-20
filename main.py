@@ -29,7 +29,7 @@ def get_tts_config():
         'provider': config.get('tts.provider', 'auto'),
         'quality': config.get('tts.quality', 'normal'),
         'openai_voice': config.get('tts.openai.voice', 'nova'),
-        'gtts_lang': config.get('tts.gtts.lang', 'en'),
+        'gtts_lang': config.get('tts.gtts.lang', 'en').split(','),
         'gtts_slow': config.get('tts.gtts.slow', False)
     }
 
@@ -54,6 +54,8 @@ def api_tts_info():
 @app.route('/api/stop_recording', methods=['POST'])
 def api_stop_recording():
     f = request.files.get('file')
+    user_level = request.form.get('user_level', 'begginer')  # Recebe o nível enviado
+
     if not f:
         return jsonify({'error': 'nenhum arquivo enviado'}), 400
 
@@ -62,7 +64,7 @@ def api_stop_recording():
 
     try:
         # Chama apenas process_audio_with_llm que já faz a transcrição
-        result = process_audio_with_llm(str(temp_path))
+        result = process_audio_with_llm(str(temp_path),  user_level=user_level)
 
         # Extrai os resultados
         transcription = result['transcription']
@@ -79,6 +81,7 @@ def api_stop_recording():
         audio_url = url_for('serve_tts', filename=tts_filename, _external=False)
 
         return jsonify({
+            'level': user_level,
             'transcription': transcription,
             'llm_response': llm_response,
             'audio_url': audio_url
