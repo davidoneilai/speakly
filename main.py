@@ -5,6 +5,7 @@ from pyhocon import ConfigFactory
 from src.recorder import start_recording, stop_recording
 from src.transcriber import process_audio_with_llm, transcribe_audio
 from src.text_to_speech import text_to_speech_with_quality, get_tts_info
+# from googletrans import Translator  # Comentado temporariamente por conflito de dependências
 
 # 1) BASE_DIR agora é a pasta onde está o main.py (a raiz do projeto)
 BASE_DIR = Path(__file__).parent.resolve()
@@ -92,6 +93,39 @@ def api_stop_recording():
 @app.route('/tts/<filename>')
 def serve_tts(filename):
     return send_from_directory(str(BASE_DIR / 'public' / 'tts'), filename)
+
+# Endpoint para traduzir texto do chinês para inglês
+@app.route('/api/translate', methods=['POST'])
+def api_translate():
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        
+        if not text:
+            return jsonify({'error': 'Texto não fornecido'}), 400
+        
+        # Importar função de tradução do transcriber que já tem OpenAI configurado
+        try:
+            from src.transcriber import translate_text_with_llm
+            translated_text = translate_text_with_llm(text)
+            
+            return jsonify({
+                'original_text': text,
+                'translated_text': translated_text,
+                'detected_language': 'zh'
+            }), 200
+            
+        except ImportError:
+            # Fallback: tradução placeholder
+            return jsonify({
+                'original_text': text,
+                'translated_text': f"[English translation of: {text}]",
+                'detected_language': 'zh'
+            }), 200
+        
+    except Exception as e:
+        print(f"Erro na tradução: {e}")
+        return jsonify({'error': f'Erro ao traduzir: {str(e)}'}), 500
 
 if __name__ == '__main__':
     # por padrão roda em http://127.0.0.1:5000/

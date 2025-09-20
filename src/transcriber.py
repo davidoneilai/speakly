@@ -161,3 +161,31 @@ def process_audio_with_llm(audio_filename):
         "transcription": transcript,
         "llm_response": llm_response
     }
+
+# Função para traduzir texto usando OpenAI
+def translate_text_with_llm(text):
+    """Traduz texto do chinês para inglês usando OpenAI"""
+    try:
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are a professional translator. Translate the following Chinese text to English. Return only the English translation, no explanations or additional text."
+                },
+                {
+                    "role": "user", 
+                    "content": text
+                }
+            ],
+            max_tokens=500,
+            temperature=0.1
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        print(f"Erro na tradução: {e}")
+        return f"[Translation unavailable: {text}]"

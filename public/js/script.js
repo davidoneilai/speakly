@@ -27,12 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const iconClass = icon || (type === 'user' ? 'user' : 'robot');
     
+    // Debug: verificar se está criando botão para assistente
+    console.log('Adicionando mensagem:', type, 'Vai ter botão?', type === 'assistant');
+    
     messageDiv.innerHTML = `
       <div class="message-header">
         <i class="fas fa-${iconClass}"></i>
         ${type === 'user' ? 'Você' : 'Assistente'}
       </div>
       <div class="message-content">${content}</div>
+      ${type === 'assistant' ? '<div class="message-actions"><button class="translate-btn" onclick="translateMessage(this)"><i class="fas fa-language"></i> Traduzir</button></div>' : ''}
+      <div class="translation-container" style="display: none;"></div>
     `;
     
     chatContainer.appendChild(messageDiv);
@@ -201,3 +206,62 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mensagem inicial
   updateStatus('Clique em "Iniciar Gravação" ou pressione ESPAÇO para começar', 'microphone-alt');
 });
+
+// Função global para traduzir mensagem
+async function translateMessage(button) {
+  const messageDiv = button.closest('.message');
+  const messageContent = messageDiv.querySelector('.message-content').textContent;
+  const translationContainer = messageDiv.querySelector('.translation-container');
+  
+  // Se já está traduzido, esconder tradução
+  if (translationContainer.style.display !== 'none') {
+    translationContainer.style.display = 'none';
+    button.innerHTML = '<i class="fas fa-language"></i> Traduzir';
+    return;
+  }
+  
+  // Mostrar loading
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traduzindo...';
+  button.disabled = true;
+  
+  try {
+    const response = await fetch('http://127.0.0.1:5000/api/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: messageContent })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Mostrar tradução
+    translationContainer.innerHTML = `
+      <div class="translation-text">
+        <i class="fas fa-globe"></i>
+        <span>${data.translated_text}</span>
+      </div>
+    `;
+    translationContainer.style.display = 'block';
+    
+    // Atualizar botão
+    button.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar';
+    
+  } catch (error) {
+    console.error('Erro ao traduzir:', error);
+    translationContainer.innerHTML = `
+      <div class="translation-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        Erro ao traduzir texto
+      </div>
+    `;
+    translationContainer.style.display = 'block';
+    button.innerHTML = '<i class="fas fa-language"></i> Traduzir';
+  } finally {
+    button.disabled = false;
+  }
+}
