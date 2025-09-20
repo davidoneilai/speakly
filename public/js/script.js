@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let mediaRecorder;
   let audioChunks = [];
   let stream;
+  let selectedLevel = 'begginer'; // Valor padrão
+
 
   const startBtn = document.getElementById('start-btn');
   const stopBtn = document.getElementById('stop-btn');
@@ -9,12 +11,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const waveImg = document.getElementById('wave');
   const chatContainer = document.getElementById('chat-container');
   const container = document.querySelector('.container');
+  const levelButtons = document.querySelectorAll('.btn-level'); // Seleciona os botões de nível
   
   const WAVE_STATIC = 'img/audiowave.png';
   const WAVE_ANIMATED = 'img/audiowave.gif';
 
   waveImg.src = WAVE_STATIC;
-
+  // Adiciona evento de clique nos botões de nível
+  levelButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedLevel = btn.getAttribute('data-level');
+      // Destaca o botão selecionado
+      levelButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      updateStatus(`Nível selecionado: ${btn.textContent}`, 'graduation-cap');
+    });
+  });
   // Função para atualizar o status
   function updateStatus(message, icon = 'info-circle') {
     status.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
@@ -98,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const form = new FormData();
         form.append('file', audioBlob, 'recording.webm');
+        form.append('user_level', selectedLevel); // Adiciona o nível ao FormData
 
         try {
           updateStatus('Transcrevendo...', 'language');
