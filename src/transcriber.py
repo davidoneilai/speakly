@@ -29,6 +29,13 @@ WHISPER_VERBOSE = config.get('whisper.verbose', False)
 # Cache do modelo Whisper para evitar recarregar
 _whisper_model_cache = None
 
+user_level = "begginer"  # ou "iniciante", "avançado"
+
+def make_generate(user_level):
+    def generate_with_level(state: MessagesState):
+        return generate(state, user_level)
+    return generate_with_level
+
 def get_whisper_model():
     """Carrega o modelo Whisper uma única vez e mantém em cache"""
     global _whisper_model_cache
@@ -89,8 +96,8 @@ def query_or_respond(state: MessagesState):
 tools_node = ToolNode([retrieve])
 
 # Passo 3: Gerar a resposta utilizando o conteúdo recuperado
-def generate(state: MessagesState):
-    """Gera a resposta final."""
+def generate(state: MessagesState, user_level="begginer"):
+    """Gera a resposta final considerando o nível do usuário."""
     # Obtém as mensagens geradas pela ferramenta, se houver
     recent_tool_messages = []
     for message in reversed(state["messages"]):
@@ -102,14 +109,22 @@ def generate(state: MessagesState):
     
     # Formata o prompt com o conteúdo dos documentos recuperados
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
+    print(f"[LOG] Nível do usuário recebido em generate: {user_level}")  # LOG
+
+    level_instruction = {
+        "begginer": "use only hsk1 words and grammar to talk.",
+        "intermediate": "use hsk1 and hsk2 words and grammar to talk.",
+        "advanced": "use a1 to c2 words and grammar to talk."
+    }.get(user_level, "")
+
     system_message_content = (
-        "You are an assistant for question-answering tasks. "
+        "You are an assistant for language learners conversation practice. "
         "Use the following pieces of retrieved context to answer "
         "the question. If you don't know the answer, say that you don't know. "
-        "Use three sentences maximum and keep the answer concise."
-        "Use simple vocabulary and short sentences."
-        "\n\n" +
-        docs_content
+        "Use three sentences maximum and keep the answer concise. "
+        "Follow the user's language level instructions strictly: "
+        f"{level_instruction}\n\n"
+        + docs_content
     )
     conversation_messages = [
         message
@@ -124,7 +139,7 @@ def generate(state: MessagesState):
 graph_builder = StateGraph(MessagesState)
 graph_builder.add_node(query_or_respond)
 graph_builder.add_node(tools_node)
-graph_builder.add_node(generate)
+graph_builder.add_node("generate", make_generate(user_level))
 graph_builder.set_entry_point("query_or_respond")
 graph_builder.add_conditional_edges(
     "query_or_respond",
@@ -138,7 +153,7 @@ memory = MemorySaver()
 graph = graph_builder.compile(checkpointer=memory)
 
 # Nova função send_to_llm utilizando o grafo
-def send_to_llm(text):
+def send_to_llm(text, user_level="begginer"):
     """
     Prepara o estado inicial com o áudio transcrito (text),
     executa o grafo e retorna a resposta gerada.
@@ -146,7 +161,8 @@ def send_to_llm(text):
     initial_messages = []
     # Adiciona a query como mensagem humana
     initial_messages.append(HumanMessage(text))
-    
+    print(f"[LOG] Nível do usuário recebido em send_to_llm: {user_level}")  # LOG
+
     state = MessagesState({"messages": initial_messages})
     # Adicione um thread_id único (pode ser um valor fixo ou dinâmico)
     final_state = graph.invoke(state, config={"thread_id": "default"})
@@ -154,9 +170,11 @@ def send_to_llm(text):
     return response_message.content
 
 # A função process_audio_with_llm continua utilizando a transcrição como query para o grafo
-def process_audio_with_llm(audio_filename):
+def process_audio_with_llm(audio_filename, user_level):
     transcript = transcribe_audio(audio_filename)
-    llm_response = send_to_llm(transcript)
+    llm_response = send_to_llm(transcript, user_level)
+    print(f"[LOG] Nível do usuário recebido em process_audio_with_llm: {user_level}")  # LOG
+
     return {
         "transcription": transcript,
         "llm_response": llm_response
