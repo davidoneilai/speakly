@@ -56,6 +56,7 @@ def api_tts_info():
 def api_stop_recording():
     f = request.files.get('file')
     user_level = request.form.get('user_level', 'begginer')  # Recebe o nível enviado
+    theme = request.form.get('theme', 'conversacao-geral')
 
     if not f:
         return jsonify({'error': 'nenhum arquivo enviado'}), 400
@@ -65,7 +66,7 @@ def api_stop_recording():
 
     try:
         # Chama apenas process_audio_with_llm que já faz a transcrição
-        result = process_audio_with_llm(str(temp_path),  user_level=user_level)
+        result = process_audio_with_llm(str(temp_path),  user_level=user_level, theme=theme)
 
         # Extrai os resultados
         transcription = result['transcription']
@@ -73,16 +74,18 @@ def api_stop_recording():
 
         # Gera o áudio da resposta usando configuração atual
         tts_config = get_tts_config()
+        # Como a resposta do LLM é em chinês, usar chinês para TTS
         tts_filename = text_to_speech_with_quality(
             llm_response, 
             provider=tts_config['provider'],
             quality=tts_config['quality'],
-            lang=tts_config.get('gtts_lang', 'en')
+            lang='zh-cn'  # Chinês simplificado para as respostas
         )
         audio_url = url_for('serve_tts', filename=tts_filename, _external=False)
 
         return jsonify({
             'level': user_level,
+            'theme': theme,
             'transcription': transcription,
             'llm_response': llm_response,
             'audio_url': audio_url
