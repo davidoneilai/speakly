@@ -3,30 +3,116 @@ document.addEventListener('DOMContentLoaded', () => {
   let audioChunks = [];
   let stream;
   let selectedLevel = 'begginer'; // Valor padrão
+  let selectedTheme = 'conversacao-geral'; // Valor padrão
+  let isAudioPlaying = false; // Nova variável para controlar áudio
+  let currentAudio = null; // Referência ao áudio atual
 
+  // Elementos da navbar
+  const difficultyBtn = document.getElementById('difficulty-btn');
+  const difficultyDropdown = document.getElementById('difficulty-dropdown');
+  const difficultyText = document.getElementById('difficulty-text');
+  const themeButtons = document.querySelectorAll('.theme-btn');
+  const customThemeInput = document.getElementById('custom-theme-input');
+  const customThemeBtn = document.getElementById('custom-theme-btn');
 
+  // Elementos principais
   const startBtn = document.getElementById('start-btn');
   const stopBtn = document.getElementById('stop-btn');
   const status = document.getElementById('status-text');
   const waveImg = document.getElementById('wave');
   const chatContainer = document.getElementById('chat-container');
   const container = document.querySelector('.container');
-  const levelButtons = document.querySelectorAll('.btn-level'); // Seleciona os botões de nível
   
   const WAVE_STATIC = 'img/audiowave.png';
   const WAVE_ANIMATED = 'img/audiowave.gif';
 
   waveImg.src = WAVE_STATIC;
-  // Adiciona evento de clique nos botões de nível
-  levelButtons.forEach(btn => {
+
+  // Funcionalidade do dropdown de dificuldade
+  difficultyBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dropdown = difficultyBtn.parentElement;
+    dropdown.classList.toggle('active');
+  });
+
+  // Fechar dropdown ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown')) {
+      document.querySelectorAll('.dropdown').forEach(dropdown => {
+        dropdown.classList.remove('active');
+      });
+    }
+  });
+
+  // Seleção de dificuldade
+  difficultyDropdown.addEventListener('click', (e) => {
+    if (e.target.classList.contains('dropdown-option')) {
+      e.preventDefault();
+      
+      // Remove active de todas as opções
+      difficultyDropdown.querySelectorAll('.dropdown-option').forEach(option => {
+        option.classList.remove('active');
+      });
+      
+      // Adiciona active na opção clicada
+      e.target.classList.add('active');
+      
+      // Atualiza valores
+      selectedLevel = e.target.getAttribute('data-value');
+      difficultyText.textContent = e.target.textContent;
+      
+      // Fecha dropdown
+      difficultyBtn.parentElement.classList.remove('active');
+      
+      updateStatus(`Difficulty selected: ${e.target.textContent}`, 'graduation-cap');
+    }
+  });
+
+  // Funcionalidade dos botões de tema
+  themeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      selectedLevel = btn.getAttribute('data-level');
-      // Destaca o botão selecionado
-      levelButtons.forEach(b => b.classList.remove('active'));
+      // Remove active de todos os botões
+      themeButtons.forEach(b => b.classList.remove('active'));
+      
+      // Adiciona active no botão clicado
       btn.classList.add('active');
-      updateStatus(`Nível selecionado: ${btn.textContent}`, 'graduation-cap');
+      
+      // Atualiza tema selecionado
+      selectedTheme = btn.getAttribute('data-theme');
+      
+      // Limpa input customizado
+      customThemeInput.value = '';
+      
+      updateStatus(`Theme selected: ${btn.textContent}`, 'tags');
     });
   });
+
+  // Funcionalidade do tema customizado
+  customThemeBtn.addEventListener('click', () => {
+    const customTheme = customThemeInput.value.trim();
+    if (customTheme) {
+      // Remove active de todos os botões de tema fixos
+      themeButtons.forEach(b => b.classList.remove('active'));
+      
+      // Define tema customizado
+      selectedTheme = customTheme;
+      
+      updateStatus(`Custom theme: ${customTheme}`, 'lightbulb');
+      
+      // Limpa o input
+      customThemeInput.value = '';
+    } else {
+      updateStatus('Enter a custom theme first', 'exclamation-triangle');
+    }
+  });
+
+  // Permitir Enter no input de tema customizado
+  customThemeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      customThemeBtn.click();
+    }
+  });
+
   // Função para atualizar o status
   function updateStatus(message, icon = 'info-circle') {
     status.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
@@ -45,10 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
     messageDiv.innerHTML = `
       <div class="message-header">
         <i class="fas fa-${iconClass}"></i>
-        ${type === 'user' ? 'Você' : 'Assistente'}
+        ${type === 'user' ? 'You' : 'Assistant'}
       </div>
       <div class="message-content">${content}</div>
-      ${type === 'assistant' ? '<div class="message-actions"><button class="translate-btn" onclick="translateMessage(this)"><i class="fas fa-language"></i> Traduzir</button></div>' : ''}
+      ${type === 'assistant' ? '<div class="message-actions"><button class="translate-btn" onclick="translateMessage(this)"><i class="fas fa-language"></i> Translate</button></div>' : ''}
       <div class="translation-container" style="display: none;"></div>
     `;
     
@@ -67,6 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   startBtn.addEventListener('click', async () => {
+    // Verificar se há áudio tocando
+    if (isAudioPlaying) {
+      updateStatus('Wait for the assistant to finish speaking...', 'exclamation-triangle');
+      return;
+    }
+    
     try {
       // Configurações otimizadas para captura de áudio
       const audioConstraints = {
@@ -101,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mediaRecorder.onstart = () => {
         startBtn.disabled = true;
         stopBtn.disabled = false;
-        updateStatus('Escutando... Fale agora!', 'microphone');
+        updateStatus('Listening... Speak now!', 'microphone');
         waveImg.src = WAVE_ANIMATED;
         container.classList.add('recording');
       };
@@ -110,15 +202,16 @@ document.addEventListener('DOMContentLoaded', () => {
         container.classList.remove('recording');
         container.classList.add('processing');
         waveImg.src = WAVE_STATIC;
-        updateStatus('Processando áudio...', 'cog fa-spin');
+        updateStatus('Processing audio...', 'cog fa-spin');
 
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const form = new FormData();
         form.append('file', audioBlob, 'recording.webm');
         form.append('user_level', selectedLevel); // Adiciona o nível ao FormData
+        form.append('theme', selectedTheme); // Adiciona o tema ao FormData
 
         try {
-          updateStatus('Transcrevendo...', 'language');
+          updateStatus('Transcribing...', 'language');
           
           const resp = await fetch('http://127.0.0.1:5000/api/stop_recording', {
             method: 'POST',
@@ -134,43 +227,66 @@ document.addEventListener('DOMContentLoaded', () => {
           // Adicionar transcrição do usuário
           if (data.transcription) {
             addMessage(data.transcription, 'user');
-            updateStatus('Gerando resposta...', 'brain');
+            updateStatus('Generating response...', 'brain');
           }
 
           // Adicionar resposta do assistente
           if (data.llm_response) {
             addMessage(data.llm_response, 'assistant');
-            updateStatus('Convertendo em áudio...', 'volume-up');
+            updateStatus('Converting to audio...', 'volume-up');
           }
 
           // Reproduzir áudio da resposta
           if (data.audio_url) {
+            // Parar áudio anterior se existir
+            if (currentAudio) {
+              currentAudio.pause();
+              currentAudio = null;
+            }
+            
             const audio = new Audio(data.audio_url);
+            currentAudio = audio;
+            
+            audio.addEventListener('loadstart', () => {
+              isAudioPlaying = true;
+              startBtn.disabled = true; // Desabilitar botão de gravação
+            });
             
             audio.addEventListener('play', () => {
+              isAudioPlaying = true;
+              startBtn.disabled = true;
               waveImg.src = WAVE_ANIMATED;
-              updateStatus('Reproduzindo resposta...', 'volume-up');
+              updateStatus('Playing response... (Recording disabled)', 'volume-up');
             });
             
             audio.addEventListener('ended', () => {
+              isAudioPlaying = false;
+              startBtn.disabled = false; // Reabilitar botão de gravação
+              currentAudio = null;
               waveImg.src = WAVE_STATIC;
-              updateStatus('Clique em "Iniciar Gravação" para continuar', 'microphone-alt');
+              updateStatus('Click "Start Recording" to continue', 'microphone-alt');
               container.classList.remove('processing');
             });
             
             audio.addEventListener('pause', () => {
+              isAudioPlaying = false;
+              startBtn.disabled = false;
+              currentAudio = null;
               waveImg.src = WAVE_STATIC;
               container.classList.remove('processing');
             });
             
             audio.addEventListener('error', () => {
-              updateStatus('Erro ao reproduzir áudio', 'exclamation-triangle');
+              isAudioPlaying = false;
+              startBtn.disabled = false;
+              currentAudio = null;
+              updateStatus('Error playing audio', 'exclamation-triangle');
               container.classList.remove('processing');
             });
             
             audio.play();
           } else {
-            updateStatus('Pronto para nova gravação', 'microphone-alt');
+            updateStatus('Ready for new recording', 'microphone-alt');
             container.classList.remove('processing');
           }
 
@@ -178,11 +294,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (err) {
           console.error("Erro:", err);
-          updateStatus('Erro ao processar áudio. Tente novamente.', 'exclamation-triangle');
-          addMessage('Desculpe, ocorreu um erro ao processar sua solicitação.', 'assistant');
+          updateStatus('Error processing audio. Please try again.', 'exclamation-triangle');
+          addMessage('Sorry, an error occurred while processing your request.', 'assistant');
           container.classList.remove('processing');
         } finally {
-          startBtn.disabled = false;
+          // Só reabilitar o botão se não houver áudio tocando
+          if (!isAudioPlaying) {
+            startBtn.disabled = false;
+          }
           if (stream) {
             stream.getTracks().forEach(track => track.stop());
           }
@@ -191,14 +310,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       mediaRecorder.start();
     } catch (err) {
-      console.error('Erro ao acessar microfone:', err);
-      updateStatus('Erro: Não foi possível acessar o microfone', 'exclamation-triangle');
+      console.error('Error accessing microphone:', err);
+      updateStatus('Error: Could not access microphone', 'exclamation-triangle');
     }
   });
 
   stopBtn.addEventListener('click', () => {
     stopBtn.disabled = true;
-    updateStatus('Finalizando gravação...', 'stop');
+    updateStatus('Finishing recording...', 'stop');
     
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
@@ -207,17 +326,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Atalhos do teclado
   document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !startBtn.disabled) {
+    if (e.code === 'Space' && !startBtn.disabled && !isAudioPlaying) {
       e.preventDefault();
       startBtn.click();
     } else if (e.code === 'Space' && !stopBtn.disabled) {
       e.preventDefault();
       stopBtn.click();
+    } else if (e.code === 'Space' && isAudioPlaying) {
+      e.preventDefault();
+      updateStatus('Wait for the assistant to finish speaking...', 'exclamation-triangle');
     }
   });
 
   // Mensagem inicial
-  updateStatus('Clique em "Iniciar Gravação" ou pressione ESPAÇO para começar', 'microphone-alt');
+  updateStatus('Click "Start Recording" or press SPACE to begin', 'microphone-alt');
 });
 
 // Função global para traduzir mensagem
@@ -229,12 +351,12 @@ async function translateMessage(button) {
   // Se já está traduzido, esconder tradução
   if (translationContainer.style.display !== 'none') {
     translationContainer.style.display = 'none';
-    button.innerHTML = '<i class="fas fa-language"></i> Traduzir';
+    button.innerHTML = '<i class="fas fa-language"></i> Translate';
     return;
   }
   
   // Mostrar loading
-  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traduzindo...';
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Translating...';
   button.disabled = true;
   
   try {
@@ -262,18 +384,18 @@ async function translateMessage(button) {
     translationContainer.style.display = 'block';
     
     // Atualizar botão
-    button.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar';
+    button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
     
   } catch (error) {
-    console.error('Erro ao traduzir:', error);
+    console.error('Error translating:', error);
     translationContainer.innerHTML = `
       <div class="translation-error">
         <i class="fas fa-exclamation-triangle"></i>
-        Erro ao traduzir texto
+        Error translating text
       </div>
     `;
     translationContainer.style.display = 'block';
-    button.innerHTML = '<i class="fas fa-language"></i> Traduzir';
+    button.innerHTML = '<i class="fas fa-language"></i> Translate';
   } finally {
     button.disabled = false;
   }

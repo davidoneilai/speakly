@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Speakly - Assistente de Voz Inteligente</title>
+  <title>Speakly - Intelligent Voice Assistant</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,59 +11,92 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <h1 class="title">
-        <i class="fas fa-microphone-alt"></i>
-        Speakly
-      </h1>
-      <p class="subtitle">Seu assistente de voz inteligente powered by AI</p>
-    </header>
-
-    <div class="level-selector level-right">
-      <label for="user-level"><strong>Nível do idioma:</strong></label>
-      <button class="btn btn-level btn-small" data-level="begginer">Iniciante</button>
-      <button class="btn btn-level btn-small" data-level="intermediate">Intermediário</button>
-      <button class="btn btn-level btn-small" data-level="advanced">Avançado</button>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <div class="brand-main">
+          <i class="fas fa-microphone-alt"></i>
+          Speakly
+        </div>
+        <p class="subtitle">Your intelligent voice assistant powered by AI</p>
+      </div>
+      
+      <div class="navbar-controls">
+        <!-- Difficulty Selector -->
+        <div class="navbar-item">
+          <label for="difficulty-select">Choose difficulty:</label>
+          <div class="dropdown">
+            <button class="dropdown-btn" id="difficulty-btn">
+              <span id="difficulty-text">Beginner</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-content" id="difficulty-dropdown">
+              <a href="#" data-value="begginer" class="dropdown-option active">Beginner</a>
+              <a href="#" data-value="intermediate" class="dropdown-option">Intermediate</a>
+              <a href="#" data-value="advanced" class="dropdown-option">Advanced</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Theme Selector -->
+        <div class="navbar-item">
+          <label for="theme-select">Choose theme:</label>
+          <div class="theme-selector">
+            <div class="theme-options">
+              <button class="theme-btn active" data-theme="conversacao-geral">General Conversation</button>
+              <button class="theme-btn" data-theme="trabalho">Work</button>
+              <button class="theme-btn" data-theme="viagem">Travel</button>
+              <button class="theme-btn" data-theme="tecnologia">Technology</button>
+            </div>
+            <div class="custom-theme">
+              <input type="text" id="custom-theme-input" placeholder="Enter a custom theme...">
+              <button id="custom-theme-btn">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
+  </nav>
+  <div class="container">
     <main class="main-content">
-      <!-- Visualizador de áudio central -->
+      <!-- Central audio visualizer -->
       <div class="audio-visualizer">
         <div class="wave-container">
-          <img src="img/audiowave.gif" alt="Visualizador de áudio" id="wave" class="wave-image">
+          <img src="img/audiowave.gif" alt="Audio visualizer" id="wave" class="wave-image">
           <div class="pulse-ring"></div>
         </div>
       </div>
-      <!-- Controles de gravação -->
+      <!-- Recording controls -->
       <div class="controls">
         <button id="start-btn" class="btn btn-primary">
           <i class="fas fa-microphone"></i>
-          <span>Iniciar Gravação</span>
+          <span>Start Recording</span>
         </button>
         <button id="stop-btn" class="btn btn-danger" disabled>
           <i class="fas fa-stop"></i>
-          <span>Parar Gravação</span>
+          <span>Stop Recording</span>
         </button>
       </div>
 
-      <!-- Status e conversação -->
+      <!-- Status and conversation -->
       <div class="conversation">
         <div class="status-card">
           <p id="status-text" class="status-text">
             <i class="fas fa-info-circle"></i>
-            Clique em 'Iniciar Gravação' para começar a conversar
+            Click 'Start Recording' to begin the conversation
           </p>
         </div>
         
         <div class="chat-container" id="chat-container">
-          <!-- Mensagens da conversa aparecerão aqui -->
+          <!-- Conversation messages will appear here -->
         </div>
       </div>
     </main>
 
     <footer class="footer">
-      <p>&copy; 2025 Speakly - Tecnologia de voz avançada</p>
+      <p>&copy; 2025 Speakly - Advanced voice technology</p>
     </footer>
   </div>
 
