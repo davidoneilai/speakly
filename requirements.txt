@@ -8,6 +8,7 @@ pygame
 pydub
 PyQt6
 pyhocon
+flask>=2.0.0
 langchain
 langchain-openai
 langchain-community
@@ -16,3 +17,4 @@ pypdf
 Flask
 faiss-cpu
 httpx>=0.24.1,<1.0.0
+python-dotenv
