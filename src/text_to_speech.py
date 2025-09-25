@@ -1,5 +1,6 @@
 import os
 import time
+import re
 from pathlib import Path
 from openai import OpenAI
 from gtts import gTTS
@@ -15,6 +16,54 @@ if os.getenv("OPENAI_API_KEY"):
         openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     except Exception as e:
         print(f"Aviso: Não foi possível inicializar OpenAI TTS: {e}")
+
+def clean_text_for_tts(text):
+    """
+    Remove caracteres de formatação Markdown e outros elementos que não devem ser falados
+    
+    Args:
+        text (str): Texto original com formatação
+    
+    Returns:
+        str: Texto limpo para TTS
+    """
+    if not text:
+        return text
+    
+    # Remove asteriscos de negrito/itálico
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **negrito** -> negrito
+    text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *itálico* -> itálico
+    
+    # Remove sublinhados de negrito/itálico
+    text = re.sub(r'__([^_]+)__', r'\1', text)      # __negrito__ -> negrito
+    text = re.sub(r'_([^_]+)_', r'\1', text)        # _itálico_ -> itálico
+    
+    # Remove links markdown [texto](url) -> texto
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    
+    # Remove código inline `código` -> código
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    
+    # Remove blocos de código ```código``` -> código
+    text = re.sub(r'```[^`]*```', '', text)
+    
+    # Remove headers # ## ### etc.
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
+    
+    # Remove listas - * + 
+    text = re.sub(r'^[\-\*\+]\s*', '', text, flags=re.MULTILINE)
+    
+    # Remove números de listas 1. 2. etc.
+    text = re.sub(r'^\d+\.\s*', '', text, flags=re.MULTILINE)
+    
+    # Remove quebras de linha extras e espaços
+    text = re.sub(r'\n+', ' ', text)
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove parênteses explicativos (como este)
+    text = re.sub(r'\([^)]*\)', '', text)
+    
+    return text.strip()
 
 def text_to_speech_openai(text, voice='nova', model='tts-1', speed=1.0):
     """
@@ -32,6 +81,12 @@ def text_to_speech_openai(text, voice='nova', model='tts-1', speed=1.0):
     if not openai_client:
         raise Exception("OpenAI TTS não está disponível. Verifique a OPENAI_API_KEY.")
     
+    # Limpa o texto de formatação Markdown
+    clean_text = clean_text_for_tts(text)
+    if not clean_text:
+        print("Aviso: Texto vazio após limpeza para TTS")
+        return None
+    
     timestamp = int(time.time() * 1000)
     filename = f"tts_openai_{timestamp}.mp3"
     out_path = TTS_DIR / filename
@@ -40,7 +95,7 @@ def text_to_speech_openai(text, voice='nova', model='tts-1', speed=1.0):
         response = openai_client.audio.speech.create(
             model=model,
             voice=voice,
-            input=text,
+            input=clean_text,
             response_format="mp3",
             speed=speed
         )
@@ -66,12 +121,18 @@ def text_to_speech_gtts(text, lang='en', slow=False):
     Returns:
         str: Nome do arquivo gerado ou None se falhar
     """
+    # Limpa o texto de formatação Markdown
+    clean_text = clean_text_for_tts(text)
+    if not clean_text:
+        print("Aviso: Texto vazio após limpeza para TTS")
+        return None
+    
     timestamp = int(time.time() * 1000)
     filename = f"tts_gtts_{timestamp}.mp3"
     out_path = TTS_DIR / filename
     
     try:
-        tts = gTTS(text=text, lang=lang, slow=slow)
+        tts = gTTS(text=clean_text, lang=lang, slow=slow)
         tts.save(str(out_path))
         return filename
     
