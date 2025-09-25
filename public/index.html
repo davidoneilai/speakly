@@ -37,25 +37,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- Theme Selector -->
-        <div class="navbar-item">
-          <label for="theme-select">Choose theme:</label>
-          <div class="theme-selector">
-            <div class="theme-options">
-              <button class="theme-btn active" data-theme="conversacao-geral">General Conversation</button>
-              <button class="theme-btn" data-theme="trabalho">Work</button>
-              <button class="theme-btn" data-theme="viagem">Travel</button>
-              <button class="theme-btn" data-theme="tecnologia">Technology</button>
-            </div>
-            <div class="custom-theme">
-              <input type="text" id="custom-theme-input" placeholder="Enter a custom theme...">
-              <button id="custom-theme-btn">
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </nav>
@@ -79,6 +60,21 @@
           <span>Stop Recording</span>
         </button>
       </div>
+      
+      <!-- Session controls -->
+      <div class="session-controls">
+        <button id="new-session-btn" class="btn btn-secondary">
+          <i class="fas fa-refresh"></i>
+          <span>New Conversation</span>
+        </button>
+        <button id="clear-memory-btn" class="btn btn-warning">
+          <i class="fas fa-trash"></i>
+          <span>Clear Memory</span>
+        </button>
+        <div class="session-status" id="session-status">
+          Session: Active
+        </div>
+      </div>
 
       <!-- Status and conversation -->
       <div class="conversation">
@@ -98,6 +94,18 @@
     <footer class="footer">
       <p>&copy; 2025 Speakly - Advanced voice technology</p>
     </footer>
+  </div>
+
+  <!-- Botões flutuantes centrais -->
+  <div class="floating-controls" id="floating-controls" style="display: none;">
+    <button id="floating-start-btn" class="floating-btn floating-btn-record">
+      <i class="fas fa-microphone"></i>
+      <span>Record</span>
+    </button>
+    <button id="floating-stop-btn" class="floating-btn floating-btn-stop" style="display: none;">
+      <i class="fas fa-stop"></i>
+      <span>Stop</span>
+    </button>
   </div>
 
   <script src="js/script.js"></script>
