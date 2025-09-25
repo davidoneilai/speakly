@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, url_for
 from pyhocon import ConfigFactory
+from dotenv import load_dotenv
 from src.recorder import start_recording, stop_recording
 from src.transcriber import process_audio_with_llm, transcribe_audio
 from src.text_to_speech import text_to_speech_with_quality, get_tts_info
@@ -9,6 +10,9 @@ from src.text_to_speech import text_to_speech_with_quality, get_tts_info
 
 # 1) BASE_DIR agora é a pasta onde está o main.py (a raiz do projeto)
 BASE_DIR = Path(__file__).parent.resolve()
+
+# Carregar variáveis de ambiente do arquivo .env
+load_dotenv(BASE_DIR / '.env')
 
 # Carregar configurações
 config = ConfigFactory.parse_file(str(BASE_DIR / 'speakly.conf'))
@@ -56,7 +60,6 @@ def api_tts_info():
 def api_stop_recording():
     f = request.files.get('file')
     user_level = request.form.get('user_level', 'begginer')  # Recebe o nível enviado
-    theme = request.form.get('theme', 'conversacao-geral')
 
     if not f:
         return jsonify({'error': 'nenhum arquivo enviado'}), 400
@@ -66,7 +69,7 @@ def api_stop_recording():
 
     try:
         # Chama apenas process_audio_with_llm que já faz a transcrição
-        result = process_audio_with_llm(str(temp_path),  user_level=user_level, theme=theme)
+        result = process_audio_with_llm(str(temp_path),  user_level=user_level)
 
         # Extrai os resultados
         transcription = result['transcription']
@@ -85,7 +88,6 @@ def api_stop_recording():
 
         return jsonify({
             'level': user_level,
-            'theme': theme,
             'transcription': transcription,
             'llm_response': llm_response,
             'audio_url': audio_url
@@ -132,6 +134,51 @@ def api_translate():
     except Exception as e:
         print(f"Erro na tradução: {e}")
         return jsonify({'error': f'Erro ao traduzir: {str(e)}'}), 500
+
+# Novos endpoints para gerenciar sessões de conversa
+@app.route('/api/new_session', methods=['POST'])
+def api_new_session():
+    """Inicia uma nova sessão de conversa, resetando o histórico"""
+    try:
+        from src.transcriber import start_new_conversation_session
+        thread_id = start_new_conversation_session()
+        return jsonify({
+            'status': 'success',
+            'message': 'Nova sessão de conversa iniciada',
+            'thread_id': thread_id
+        }), 200
+    except Exception as e:
+        print(f"Erro ao iniciar nova sessão: {e}")
+        return jsonify({'error': f'Erro ao iniciar nova sessão: {str(e)}'}), 500
+
+@app.route('/api/clear_memory', methods=['POST'])
+def api_clear_memory():
+    """Limpa completamente a memória da conversa"""
+    try:
+        from src.transcriber import clear_conversation_memory
+        clear_conversation_memory()
+        return jsonify({
+            'status': 'success',
+            'message': 'Memória da conversa foi limpa'
+        }), 200
+    except Exception as e:
+        print(f"Erro ao limpar memória: {e}")
+        return jsonify({'error': f'Erro ao limpar memória: {str(e)}'}), 500
+
+@app.route('/api/conversation_status', methods=['GET'])
+def api_conversation_status():
+    """Retorna informações sobre a sessão atual"""
+    try:
+        from src.transcriber import _current_thread_id, get_conversation_history
+        history_info = get_conversation_history()
+        return jsonify({
+            'thread_id': _current_thread_id,
+            'status': history_info.get('status', 'active'),
+            'memory_available': history_info.get('memory_available', True)
+        }), 200
+    except Exception as e:
+        print(f"Erro ao obter status da conversa: {e}")
+        return jsonify({'error': f'Erro ao obter status: {str(e)}'}), 500
 
 if __name__ == '__main__':
     # por padrão roda em http://127.0.0.1:5000/
