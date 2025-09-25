@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedTheme = 'conversacao-geral'; // Valor padrão
   let isAudioPlaying = false; // Nova variável para controlar áudio
   let currentAudio = null; // Referência ao áudio atual
+  let firstResponseReceived = false; // Flag para controlar exibição dos botões flutuantes
 
   // Elementos da navbar
   const difficultyBtn = document.getElementById('difficulty-btn');
@@ -22,6 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const waveImg = document.getElementById('wave');
   const chatContainer = document.getElementById('chat-container');
   const container = document.querySelector('.container');
+  
+  // Botões flutuantes
+  const floatingStartBtn = document.getElementById('floating-start-btn');
+  const floatingStopBtn = document.getElementById('floating-stop-btn');
+  const floatingControls = document.getElementById('floating-controls');
+  
+  console.log('Floating buttons found:', floatingStartBtn, floatingStopBtn); // Debug
   
   const WAVE_STATIC = 'img/audiowave.png';
   const WAVE_ANIMATED = 'img/audiowave.gif';
@@ -88,7 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Funcionalidade do tema customizado
-  customThemeBtn.addEventListener('click', () => {
+  if (customThemeBtn && customThemeInput) {
+    customThemeBtn.addEventListener('click', () => {
     const customTheme = customThemeInput.value.trim();
     if (customTheme) {
       // Remove active de todos os botões de tema fixos
@@ -104,14 +113,15 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       updateStatus('Enter a custom theme first', 'exclamation-triangle');
     }
-  });
+    });
 
-  // Permitir Enter no input de tema customizado
-  customThemeInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      customThemeBtn.click();
-    }
-  });
+    // Permitir Enter no input de tema customizado
+    customThemeInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        customThemeBtn.click();
+      }
+    });
+  }
 
   // Função para atualizar o status
   function updateStatus(message, icon = 'info-circle') {
@@ -234,6 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
           if (data.llm_response) {
             addMessage(data.llm_response, 'assistant');
             updateStatus('Converting to audio...', 'volume-up');
+            
+            // Mostrar botões flutuantes após primeira resposta
+            if (!firstResponseReceived) {
+              firstResponseReceived = true;
+              showFloatingControls();
+            }
           }
 
           // Reproduzir áudio da resposta
@@ -337,6 +353,58 @@ document.addEventListener('DOMContentLoaded', () => {
       updateStatus('Wait for the assistant to finish speaking...', 'exclamation-triangle');
     }
   });
+
+  // Função para mostrar os botões flutuantes
+  function showFloatingControls() {
+    if (floatingControls) {
+      floatingControls.style.display = 'flex';
+      syncFloatingButtons();
+    }
+  }
+
+  // Função para sincronizar os botões flutuantes com os principais
+  function syncFloatingButtons() {
+    // Só sincronizar se os botões flutuantes já foram mostrados
+    if (!firstResponseReceived || !floatingControls || floatingControls.style.display === 'none') {
+      return;
+    }
+    
+    if (startBtn.disabled || isAudioPlaying) {
+      floatingStartBtn.style.display = 'none';
+      floatingStopBtn.style.display = 'flex';
+    } else {
+      floatingStartBtn.style.display = 'flex';
+      floatingStopBtn.style.display = 'none';
+    }
+  }
+  
+  // Event listeners para os botões flutuantes
+  if (floatingStartBtn && floatingStopBtn) {
+    floatingStartBtn.addEventListener('click', () => {
+      console.log('Floating start button clicked!'); // Debug
+      startBtn.click(); // Reutiliza a lógica do botão principal
+    });
+    
+    floatingStopBtn.addEventListener('click', () => {
+      console.log('Floating stop button clicked!'); // Debug
+      stopBtn.click(); // Reutiliza a lógica do botão principal
+    });
+    
+    // Observar mudanças nos botões principais para sincronizar os flutuantes
+    const observer = new MutationObserver(() => {
+      syncFloatingButtons();
+    });
+    
+    // Observar mudanças nos atributos disabled dos botões principais
+    observer.observe(startBtn, { attributes: true, attributeFilter: ['disabled'] });
+    observer.observe(stopBtn, { attributes: true, attributeFilter: ['disabled'] });
+    
+    // Sincronização inicial
+    syncFloatingButtons();
+    console.log('Floating buttons initialized!'); // Debug
+  } else {
+    console.error('Floating buttons not found!'); // Debug
+  }
 
   // Mensagem inicial
   updateStatus('Click "Start Recording" or press SPACE to begin', 'microphone-alt');
